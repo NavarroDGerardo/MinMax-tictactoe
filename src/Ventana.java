@@ -17,6 +17,7 @@ public class Ventana extends JFrame{
     JButton botonPodaAlphaBeta;
     int numberTurns = 1;
     boolean jugarConPoda = false;
+    int numberCalls = 0;
 
     public Ventana(){
         super("Tic tac toe");
@@ -326,6 +327,7 @@ public class Ventana extends JFrame{
                 }
             }
         }
+        System.out.println(numberCalls);
         board.getSquares()[selecction[0]][selecction[1]] = Square.X;
         checkIfWinner();
     }
@@ -338,6 +340,7 @@ public class Ventana extends JFrame{
     }
 
     public int minmax(Board auxB, int filled, boolean turn){
+        numberCalls++;
         if(filled == 9) return FindMatchWinner(auxB);
         int bestScoreHuman = Integer.MIN_VALUE;
         int bestScoreAI = Integer.MAX_VALUE;
@@ -361,28 +364,31 @@ public class Ventana extends JFrame{
     }
 
     public int minmax_alphabeta(Board b, int filled, boolean turn){
+        numberCalls++;
         if(filled == 9) return FindMatchWinner(b);
-
-        int beta = Integer.MAX_VALUE;
         int alpha = Integer.MIN_VALUE;
+        int beta = Integer.MAX_VALUE;
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 3; j++){
                 if(b.getSquares()[i][j] == Square.vacio) {
                     if(turn){
                         b.getSquares()[i][j] = Square.X;
-                        int currentBeta = minmax_alphabeta(b, filled + 1, false);
-                        beta = Math.min(beta, currentBeta);
+                        int score = minmax(b, filled + 1, false);
+                        alpha = Math.max(alpha, score);
                     }else {
                         b.getSquares()[i][j] = Square.O;
-                        int currentAlpha = minmax_alphabeta(b, filled + 1, true);
-                        alpha = Math.max(alpha, currentAlpha);
+                        int score = minmax(b, filled+1, true);
+                        beta = Math.min(beta, score);
                     }
                     b.getSquares()[i][j] = Square.vacio;
                 }
-                if(alpha >= beta) return (turn) ? alpha : beta;
+                if(alpha >= beta){
+                    System.out.println("hola");
+                    return (turn) ? beta : alpha;
+                }
             }
         }
-        return (turn) ? beta : alpha;
+        return (turn) ? alpha : beta;
     }
 
     public int FindMatchWinner(Board b){
