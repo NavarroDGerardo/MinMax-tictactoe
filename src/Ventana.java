@@ -1,3 +1,4 @@
+import javax.sound.midi.Soundbank;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -13,7 +14,9 @@ public class Ventana extends JFrame{
     JButton one, two, three, four, five, six, seven, eight, nine;
     JLabel titulo;
     JButton botonJugar;
+    JButton botonPodaAlphaBeta;
     int numberTurns = 1;
+    boolean jugarConPoda = false;
 
     public Ventana(){
         super("Tic tac toe");
@@ -59,16 +62,20 @@ public class Ventana extends JFrame{
         container = new JPanel();
         container.setLayout(new GridLayout(1, 1));
         menu = new JPanel();
-        menu.setLayout(new GridLayout(4, 1));
+        menu.setLayout(new GridLayout(5, 1));
         menu.add(new JLabel(""));
         titulo = new JLabel("Tic Tac Toe");
         titulo.setFont(new Font("Serif", Font.BOLD, 28));
         titulo.setHorizontalAlignment( SwingConstants.CENTER );
         botonJugar = new JButton();
-        botonJugar.setText("Jugar");
+        botonJugar.setText("Jugar Normal");
         botonJugar.addActionListener(new BotonJugarListener());
+        botonPodaAlphaBeta = new JButton();
+        botonPodaAlphaBeta.setText("Jugar Poda alfa-beta");
+        botonPodaAlphaBeta.addActionListener(new BotonJugarPodaListener());
         menu.add(titulo);
         menu.add(botonJugar);
+        menu.add(botonPodaAlphaBeta);
         menu.add(new JLabel(""));
         container.add(menu);
         add(container);
@@ -163,15 +170,27 @@ public class Ventana extends JFrame{
 
     public class BotonJugarListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
-            board = new Board();
-            numberTurns = 1;
-            container.remove(menu);
-            container.add(boardPanel);
-            AI();
-            paintBoard();
-            revalidate();
-            repaint();
+            jugarConPoda = false;
+            initiateGame();
         }
+    }
+
+    public class BotonJugarPodaListener implements ActionListener{
+        public void actionPerformed(ActionEvent e){
+            jugarConPoda = true;
+            initiateGame();
+        }
+    }
+
+    public void initiateGame(){
+        board = new Board();
+        numberTurns = 1;
+        container.remove(menu);
+        container.add(boardPanel);
+        AI();
+        paintBoard();
+        revalidate();
+        repaint();
     }
 
     public class OneButtonListener implements ActionListener{
@@ -291,7 +310,13 @@ public class Ventana extends JFrame{
             for(int j = 0; j < 3; j++){
                 if(auxB.getSquares()[i][j] == Square.vacio){
                     auxB.getSquares()[i][j] = Square.X;
-                    int score = minmax(auxB, numberTurns, false);
+                    int score = Integer.MIN_VALUE;
+                    if(jugarConPoda){
+                        score  = minmax_alphabeta(auxB, numberTurns, false);
+                    }
+                    else {
+                        score = minmax(auxB, numberTurns, false);
+                    }
                     if(score > bestScore){
                         bestScore = score;
                         selecction[0] = i;
@@ -314,33 +339,50 @@ public class Ventana extends JFrame{
 
     public int minmax(Board auxB, int filled, boolean turn){
         if(filled == 9) return FindMatchWinner(auxB);
-        if(turn){
-            int bestScore = Integer.MIN_VALUE;
-            for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 3; j++){
-                    if(auxB.getSquares()[i][j] == Square.vacio){
+        int bestScoreHuman = Integer.MIN_VALUE;
+        int bestScoreAI = Integer.MAX_VALUE;
+        for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+                if(auxB.getSquares()[i][j] == Square.vacio) {
+                    if(turn){
                         auxB.getSquares()[i][j] = Square.X;
-                        int score = minmax(auxB, filled+1, false);
-                        auxB.getSquares()[i][j] = Square.vacio;
-                        bestScore = Math.max(bestScore, score);
-                    }
-                }
-            }
-            return bestScore;
-        }else {
-            int bestScore = Integer.MAX_VALUE;
-            for(int i = 0; i < 3; i++){
-                for(int j = 0; j < 3; j++){
-                    if(auxB.getSquares()[i][j] == Square.vacio){
+                        int score = minmax(auxB, filled + 1, false);
+                        bestScoreHuman = Math.max(bestScoreHuman, score);
+                    }else {
                         auxB.getSquares()[i][j] = Square.O;
                         int score = minmax(auxB, filled+1, true);
-                        auxB.getSquares()[i][j] = Square.vacio;
-                        bestScore = Math.min(bestScore, score);
+                        bestScoreAI = Math.min(bestScoreAI, score);
                     }
+                    auxB.getSquares()[i][j] = Square.vacio;
                 }
             }
-            return bestScore;
         }
+        return (turn) ? bestScoreHuman : bestScoreAI;
+    }
+
+    public int minmax_alphabeta(Board b, int filled, boolean turn){
+        if(filled == 9) return FindMatchWinner(b);
+
+        int beta = Integer.MAX_VALUE;
+        int alpha = Integer.MIN_VALUE;
+        for(int i = 0; i < 3; i++){
+            for(int j = 0; j < 3; j++){
+                if(b.getSquares()[i][j] == Square.vacio) {
+                    if(turn){
+                        b.getSquares()[i][j] = Square.X;
+                        int currentBeta = minmax_alphabeta(b, filled + 1, false);
+                        beta = Math.min(beta, currentBeta);
+                    }else {
+                        b.getSquares()[i][j] = Square.O;
+                        int currentAlpha = minmax_alphabeta(b, filled + 1, true);
+                        alpha = Math.max(alpha, currentAlpha);
+                    }
+                    b.getSquares()[i][j] = Square.vacio;
+                }
+                if(alpha >= beta) return (turn) ? alpha : beta;
+            }
+        }
+        return (turn) ? beta : alpha;
     }
 
     public int FindMatchWinner(Board b){
