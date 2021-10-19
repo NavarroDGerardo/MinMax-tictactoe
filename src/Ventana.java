@@ -1,24 +1,33 @@
-import javax.sound.midi.Soundbank;
+/**
+ * clase ventana
+ * despliega la ventana de la interfaz para el usuario
+ * También la lógica para la inteligencia artificial.
+* @authors
+ * Diego Gerardo Navarro González   A01338941
+ * Alan Rodrigo Mendoza Aguilar     A01339625
+ * J. Iván Morales González         A01652650
+*/
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.io.*;
-import java.util.Random;
-import javax.swing.JOptionPane;
 
 public class Ventana extends JFrame{
-    Board board;
-    JPanel container;
-    JPanel boardPanel;
-    JPanel menu;
-    JButton one, two, three, four, five, six, seven, eight, nine;
-    JLabel titulo;
-    JButton botonJugar;
-    JButton botonPodaAlphaBeta;
-    int numberTurns = 1;
-    boolean jugarConPoda = false;
-    int numberCalls = 0;
+    Board board; //objeto board
+    JPanel container; //panel que contiene toda la interfaz del usuario
+    JPanel boardPanel; //panel que contiene los botones del tic tac toe
+    JPanel menu; // panel inicial del juego
+    JButton one, two, three, four, five, six, seven, eight, nine; // botones para cada casilla del juego
+    JLabel titulo; //titulo del juego y desplegar el resultado del juego
+    JButton botonJugar; //boton para iniciar el juego con el algoritmo minmax sin la poda alfa beta
+    JButton botonPodaAlphaBeta; //boton para iniciar el juego con el algoritmo minmax con la poda alfa beta
+    int numberTurns = 1; //iniciamos el número de casillas en uno porque la IA va a jugar primero
+    boolean jugarConPoda = false; //esta variable se utiliza para saber le tipo de algoritmo a utilizar
+    int numberCalls = 0; //desplegamos el número de llamadas a los metodos que implementan la IA
 
+    /**
+     * metodo de contrucción de la Interfaz de usuarios.
+     */
     public Ventana(){
         super("Tic tac toe");
         one=new JButton("");
@@ -85,6 +94,9 @@ public class Ventana extends JFrame{
         setVisible(true);
     }
 
+    /**
+     * metodo para pintar en la interfaz del usuario los datos almacenados en el objeto board
+     */
     public void paintBoard(){
         if(board.getSquares()[0][0] == Square.X)
             one.setText("X");
@@ -150,6 +162,10 @@ public class Ventana extends JFrame{
             nine.setText("");
     }
 
+    /**
+     * este metodo despliega el resultado del juego.
+     * cambia el tablero del juego por la pantalla inicial con el resultado
+     */
     public void FindWinner(){
         int res = FindMatchWinner(board);
         switch (res){
@@ -169,6 +185,9 @@ public class Ventana extends JFrame{
         repaint();
     }
 
+    /**
+     * sí presionamos el boton jugar se inicia el juego pero sin la poda alfa beta
+     */
     public class BotonJugarListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
             jugarConPoda = false;
@@ -176,6 +195,9 @@ public class Ventana extends JFrame{
         }
     }
 
+    /**
+     * metodo para saber sí presionamos el boton jugar se inicia el juego pero con la poda alfa beta
+     */
     public class BotonJugarPodaListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
             jugarConPoda = true;
@@ -183,7 +205,13 @@ public class Ventana extends JFrame{
         }
     }
 
+    /**
+     * metodo para iniciar el juego
+     * se inician todas las variables a estados iniciales para el correcto funcionamiento.
+     * quita el panel del menu y despliega el tablero para jugar
+     */
     public void initiateGame(){
+        numberCalls = 0;
         board = new Board();
         numberTurns = 1;
         container.remove(menu);
@@ -194,6 +222,12 @@ public class Ventana extends JFrame{
         repaint();
     }
 
+    /**
+     * los metodos siguientes son para sabes sí la casilla presionada por el usuario esta vacia.
+     * en caso de estar vacia posiciona una O en el lugar. suma el número de llamadas. Checa sí hay un ganador.
+     * en caso contrario la IA hace la jugada y pinta el tablero en la interfaz del usuario.
+     * cada boton tiene un método diferente pero todos hacen más o menos lo mismo.
+     */
     public class OneButtonListener implements ActionListener{
         public void actionPerformed(ActionEvent e){
             if(board.getSquares()[0][0] == Square.vacio){
@@ -302,36 +336,47 @@ public class Ventana extends JFrame{
         }
     }
 
+    /**
+     * Método para hacer que la Inteligencia Artificial haga su jugada.
+     * para hacer esto vamos a simular todos las posibles tiradas que puede hacer la AI
+     * con el tablero que esta desplegado en la IU. Todas las tiradas las analizaremos con el metodo min-max
+     * encontraremos cual es la tirada con mejor resultado y colocaremos la X en el lugar que nos lleve a ese resultado.
+     */
     public void AI(){
-        numberTurns++;
-        Board auxB = board;
-        int bestScore = Integer.MIN_VALUE;
-        int[] selecction = new int[2];
-        for(int i = 0; i < 3; i++){
-            for(int j = 0; j < 3; j++){
-                if(auxB.getSquares()[i][j] == Square.vacio){
-                    auxB.getSquares()[i][j] = Square.X;
-                    int score = Integer.MIN_VALUE;
-                    if(jugarConPoda){
-                        score  = minmax_alphabeta(auxB, numberTurns, false);
+        numberTurns++; //incrementamos el número de turnos a uno ya que es el turno de la IA
+        Board auxB = board; //creamos una copia del juego actual para no modificar la partida
+        int bestScore = Integer.MIN_VALUE; // el mejor score es el menor valor posible de int para poder hacer las modificaciones
+        int[] selecction = new int[2]; //iniciamos un arreglo para almacenar el tiro óptimo
+        for(int i = 0; i < 3; i++){//recorreremos todos los renglones de la matriz del tablero
+            for(int j = 0; j < 3; j++){//recorreremos todos los datos de cada renglon
+                if(auxB.getSquares()[i][j] == Square.vacio){//checamos sí la casilla esta vacia
+                    auxB.getSquares()[i][j] = Square.X;//pondremos una X en el lugar vacio en nuestra copia del tablero
+                    int score = Integer.MIN_VALUE; //iniciamos el score con el menor int posible
+                    if(jugarConPoda){//si estamos jugando con Poda alfa beta llamaremos el metodo minmax_alphabeta
+                        score  = minmax_alphabeta(auxB, numberTurns, false, Integer.MIN_VALUE, Integer.MAX_VALUE);
                     }
-                    else {
+                    else {//si no estamos jugando con poda alfa beta llamamos el método normal
                         score = minmax(auxB, numberTurns, false);
                     }
-                    if(score > bestScore){
-                        bestScore = score;
-                        selecction[0] = i;
-                        selecction[1] = j;
+                    if(score > bestScore){ //checamos si el score que obtuvimos del método es mayor que el bestscore
+                        bestScore = score; //asignamos el bestscore como el score
+                        selecction[0] = i; // guardamos la i que nos llevo al mejor score
+                        selecction[1] = j; // guardamos la j que nos llevo al mejor score
                     }
-                    auxB.getSquares()[i][j] = Square.vacio;
+                    auxB.getSquares()[i][j] = Square.vacio; // quitamos la X de la casilla para continuar con las siguientes tiradas.
                 }
             }
         }
-        System.out.println(numberCalls);
-        board.getSquares()[selecction[0]][selecction[1]] = Square.X;
-        checkIfWinner();
+        //imprimimos el número de llamadas totales al algoritmo
+        System.out.println("Número de llamadas " + ((jugarConPoda) ? "con" : "sin") + " poda alpha beta: " +  numberCalls);
+        board.getSquares()[selecction[0]][selecction[1]] = Square.X; //ponemos la X en la posición que nos lleva a la tirada optima
+        checkIfWinner(); //checamos sí ya econtramos un ganador.
     }
 
+    /**
+     * método para rechar sí ya encotnramos un ganador. En caso que sí lo encontremos termina el juego y
+     * despliega la pantalla con el resultado.
+     */
     private void checkIfWinner(){
         int res = FindMatchWinner(board);
         if(numberTurns == 9 || res != 0){
@@ -339,58 +384,95 @@ public class Ventana extends JFrame{
         }
     }
 
+    /**
+     * el metodo min max nos dice cual es la mejor tirada que podemos efectur con el tablero dado.
+     * tenemos que escoger la mejor jugada dependiendo quien sea el jugador que esta tirando.
+     * cuando gana el humano el juego es 1. Cuando gana la IA la tirada -1. el punto del algoritmo
+     * es detectar la mejor tirada para ambos casos desplegando todas las ramas de posibilidades
+     * dentro del juego inicial dado.
+     *
+     * @param auxB es el tablero
+     * @param filled nos dice cuantas casillas estan llenas en el tablero
+     * @param turn nos dice quien es el jugador que va. true es AI, false es humano
+     * @return el resultado posible de esa jugada.
+     */
     public int minmax(Board auxB, int filled, boolean turn){
-        numberCalls++;
-        if(filled == 9) return FindMatchWinner(auxB);
-        int bestScoreHuman = Integer.MIN_VALUE;
-        int bestScoreAI = Integer.MAX_VALUE;
+        numberCalls++; // esta variable nos ayuda a saber cuantas veces se llamo al algoritmo por jugada
+        if(filled == 9) return FindMatchWinner(auxB); // si todas las casillas en el juego estan llenas checamos quien gano
+        int bestScoreHuman = Integer.MIN_VALUE; //seteamos el mejor escore del humano a el minimo valor de int
+        int bestScoreAI = Integer.MAX_VALUE; //seteamos el mejor score de la IA a el maximo valor de int
+        //recorremos con dos for todos los datos de la matriz.
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 3; j++){
+                //checamos sí el espacio en i, j esta vacio
                 if(auxB.getSquares()[i][j] == Square.vacio) {
+                    //checamos de quien es el turno
                     if(turn){
-                        auxB.getSquares()[i][j] = Square.X;
-                        int score = minmax(auxB, filled + 1, false);
-                        bestScoreHuman = Math.max(bestScoreHuman, score);
+                        auxB.getSquares()[i][j] = Square.X; //en caso de IA ponemos una x en la casilla y recorremos las posibilidades pero con la tirada del humano
+                        int score = minmax(auxB, filled + 1, false);//mandamos el algorimo con uan casilla más llena y ahora es turno del humano
+                        bestScoreHuman = Math.max(bestScoreHuman, score); //si el valor del score es mejor que la besthumanscore la actualizamos
                     }else {
-                        auxB.getSquares()[i][j] = Square.O;
-                        int score = minmax(auxB, filled+1, true);
-                        bestScoreAI = Math.min(bestScoreAI, score);
+                        auxB.getSquares()[i][j] = Square.O;//en caso de humano ponemos una O en la casilla y recorremos las posibilidades pero con la tirada del IA
+                        int score = minmax(auxB, filled+1, true);//mandamos el algorimo con uan casilla más llena y ahora es turno del IA
+                        bestScoreAI = Math.min(bestScoreAI, score);//si el valor del score es mejor que la bestScoreAI la actualizamos
                     }
-                    auxB.getSquares()[i][j] = Square.vacio;
+                    auxB.getSquares()[i][j] = Square.vacio; //volvemos a vaciar el espacio para poder poner las siguientes posibilidades.
                 }
             }
         }
-        return (turn) ? bestScoreHuman : bestScoreAI;
+        return (turn) ? bestScoreHuman : bestScoreAI; //dependiendo de quien sea la tirada regresamos el mejor valor para ese jugador.
     }
 
-    public int minmax_alphabeta(Board b, int filled, boolean turn){
-        numberCalls++;
+    /**
+     *  Este metodo hace lo mismo que el método minmax. La diferencia radica en que aquí tenemos dos
+     *  variables (alpha y beta). alpha concierne al jugador max (IA) y beta concierne al jugador min (humano).
+     *  La poda alfa beta nos ayuda a hacer el algoritmo min max de manera más eficiente ya que no tenemos que
+     *  recorrer todoas las posibles ramas. recortando así ramas que ya no sean necesarias. El algoritmo toma su
+     *  nombre de poda porque sí recortamos posibilidades en un analisis beta es una poda beta y en caso contrario
+     *  podamos en alfa. la condición para poder podar es que alpha sea mayor o igual que beta. En caso que se
+     *  cumpla esta condición ya no continuamos analizando las posibilidades.
+     *
+     * @param b es el tablero
+     * @param filled nos dice cuantas casillas estan llenas en el tablero
+     * @param turn nos dice quien es el jugador que va. true es AI, false es humano
+     * @param rootAlpha es el alpha inicial de la rama actual
+     * @param rootBeta el al beta inicial de la rama actual
+     * @return
+     */
+    public int minmax_alphabeta(Board b, int filled, boolean turn, int rootAlpha, int rootBeta){
+        numberCalls++; // esta variable nos ayuda a saber cuantas veces se llamo al algoritmo por jugada
         if(filled == 9) return FindMatchWinner(b);
-        int alpha = Integer.MIN_VALUE;
-        int beta = Integer.MAX_VALUE;
+        int alpha = rootAlpha; //seteamos la nueva alpha con la raiz alpha
+        int beta = rootBeta; //seteamos la nueva beta con la raiz beta
         for(int i = 0; i < 3; i++){
             for(int j = 0; j < 3; j++){
                 if(b.getSquares()[i][j] == Square.vacio) {
                     if(turn){
                         b.getSquares()[i][j] = Square.X;
-                        int score = minmax(b, filled + 1, false);
+                        int score = minmax_alphabeta(b, filled + 1, false, alpha, beta);
                         alpha = Math.max(alpha, score);
                     }else {
                         b.getSquares()[i][j] = Square.O;
-                        int score = minmax(b, filled+1, true);
+                        int score = minmax_alphabeta(b, filled+1, true, alpha, beta);
                         beta = Math.min(beta, score);
                     }
                     b.getSquares()[i][j] = Square.vacio;
                 }
+                //si alpha es mayor o igual a beta paramos el analisis y regresamos el valor alpha o beta dependiendo quien sea el jugaro que esta jugando.
                 if(alpha >= beta){
-                    System.out.println("hola");
                     return (turn) ? beta : alpha;
                 }
             }
         }
+        //regresamos el valor alpha sí la IA esta jugando o beta en caso que el humano juegue.
         return (turn) ? alpha : beta;
     }
 
+    /**
+     * este metodo nos ayuda a verificar quien fue el ganador del juego.
+     * @param b tablero a analizar
+     * @return 1 sí el ganador es el humano, -1 sí gano la IA y 0 en caso de empate.
+     */
     public int FindMatchWinner(Board b){
         int diagL = 0, diagR = 0;
         int upRow = 0, midRow = 0, downRow = 0;
